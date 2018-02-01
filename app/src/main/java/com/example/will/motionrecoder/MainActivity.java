@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             node.append("\r\n");
     }
     public void makewriter(String filename) {
-        String filepath = Environment.getExternalStorageDirectory().toString()+ "/Pictures/"+filename+".txt";
+        String filepath = Environment.getExternalStorageDirectory().toString()+ "/Download/"+filename+".txt";
         try
         {
             File file = new File(filepath);
