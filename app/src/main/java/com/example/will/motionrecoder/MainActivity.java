@@ -1,6 +1,11 @@
 package com.example.will.motionrecoder;
 
+import android.Manifest;
+import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.hardware.SensorEventListener;
+import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.hardware.Sensor;
@@ -20,8 +25,28 @@ import java.io.PrintWriter;
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
     private SensorManager mSensorManager;
     private Sensor mSensor, mSensor2;
+    PrintWriter node;
     Context context = this;
     boolean filestatus = false;
+    String filename;
+    // Storage Permissions
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        //6532
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        verifyStoragePermissions(this);
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        mSensor2 = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mSensorManager.registerListener(this, mSensor , 1000);
+        mSensorManager.registerListener(this, mSensor2 , 1000);
+    }
 
     public void onSensorChanged(SensorEvent event) {
         TextView tv1 = (TextView) findViewById(R.id.textView);
@@ -38,12 +63,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
              z = event.values[2];
             TextView tv2 = (TextView) findViewById(R.id.textView2);
             tv2.setText("time:"+ time + "\nx:"+x +" \n y:"+y + "\n z:" + z);
+            if(filestatus == true){
+                writeData("1,"+time + ","+x +","+y + "," + z);
+            }
         }else if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
              x = event.values[0];
              y = event.values[1];
              z = event.values[2];
             TextView tv3 = (TextView) findViewById(R.id.textView3);
             tv3.setText("time:"+ time + "\nx:"+x +" \n y:"+y + "\n z:" + z);
+            if(filestatus == true){
+                writeData("0,"+time + ","+x +","+y + "," + z);
+            }
         }
 
     }
@@ -53,54 +84,63 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     {
 
     }
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        //6532
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        mSensor2 = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mSensorManager.registerListener(this, mSensor , 1000);
-        mSensorManager.registerListener(this, mSensor2 , 1000);
-    }
 
-    public void writeData(String data,String filename)
+
+    public void writeData(String data)
     {
-        PrintWriter node;
-        String filepath ="/root/sdcard/Pictures/"+ filename;
+            node.print(data);
+            node.append("\r\n");
+    }
+    public void makewriter(String filename) {
+        String filepath = Environment.getExternalStorageDirectory().toString()+ "/Pictures/"+filename+".txt";
         try
         {
-
             File file = new File(filepath);
             if(!file.exists()){
-                file = new File(filepath);
+                file.createNewFile();
             }
-            node = new  PrintWriter(new FileWriter(file,true));
-            node.print(data+","+"hello");
-            node.append("\r\n");
-            node.print("world");
-            node.close();
-        }
+            node = new  PrintWriter(new FileWriter(file,true));}
         catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+            {
+                e.printStackTrace();
+            }
     }
 
     public void recordhandler(View v)
     {
+        EditText et = (EditText) findViewById(R.id.filename);
         if(filestatus == false) {
             filestatus = true;
             Button p1_button = (Button) v;
             p1_button.setText("Stop");
+            filename = et.getText().toString();
+            makewriter(filename);
         }
         else{
-            EditText et = (EditText) findViewById(R.id.username);
             et.setText("");
             filestatus = false;
             Button p1_button = (Button) v;
+            node.close();
             p1_button.setText("Start Recording");
+        }
+    }
+
+
+    /**
+     * Checks if the app has permission to write to device storage
+     * If the app does not has permission then the user will be prompted to grant permission
+     */
+    public static void verifyStoragePermissions(Activity activity) {
+        // Check if we have write permission
+        int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(
+                    activity,
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
         }
     }
 
