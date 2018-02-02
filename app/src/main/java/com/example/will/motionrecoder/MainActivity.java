@@ -20,15 +20,28 @@ import android.widget.TextView;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.util.Stack;
 
-
+//TYPE_GYROSCOPE first + TYPE_ACCELEROMETER
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
+    static class sensordata {
+        public int sensortype;
+        public Long timestamp;
+        public String data;
+        public sensordata(int a, Long b, String c){
+            sensortype = a;
+            timestamp = b;
+            data = c;
+        }
+    }
+
     private SensorManager mSensorManager;
     private Sensor mSensor, mSensor2;
     PrintWriter node;
     Context context = this;
     boolean filestatus = false;
     String filename;
+    Stack<sensordata> databuffer = new Stack();
     // Storage Permissions
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
     private static String[] PERMISSIONS_STORAGE = {
@@ -52,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         TextView tv1 = (TextView) findViewById(R.id.textView);
         tv1.setText("Hello");
         Sensor sensor = event.sensor;
-        long time = event.timestamp;
+        Long time = event.timestamp;
         float x,y,z;
         x=0;
         y=0;
@@ -64,7 +77,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             TextView tv2 = (TextView) findViewById(R.id.textView2);
             tv2.setText("time:"+ time + "\nx:"+x +" \n y:"+y + "\n z:" + z);
             if(filestatus == true){
-                writeData("1,"+time + ","+x +","+y + "," + z);
+                String data = x +","+y + "," + z; //1
+                sensordata tmp = new sensordata(1,time,data);
+                if(databuffer.isEmpty()) {
+                    databuffer.push(tmp);
+                }
+                else{
+                    sensordata poped = databuffer.pop();
+                    if (poped.sensortype != 0){
+                        //do nothing
+                        databuffer.push(tmp);
+                    }
+                    else{
+                        if(Math.abs(poped.timestamp - tmp.timestamp) < 500000){
+                            writeData(tmp.timestamp+", "+ poped.data+", "+tmp.data);
+                        }
+                        else{
+                            databuffer.push(tmp);
+                        }
+                    }
+                }
             }
         }else if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
              x = event.values[0];
@@ -73,7 +105,26 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             TextView tv3 = (TextView) findViewById(R.id.textView3);
             tv3.setText("time:"+ time + "\nx:"+x +" \n y:"+y + "\n z:" + z);
             if(filestatus == true){
-                writeData("0,"+time + ","+x +","+y + "," + z);
+                String data = x +","+y + "," + z; //0
+                sensordata tmp = new sensordata(0,time,data);
+                if(databuffer.isEmpty()) {
+                    databuffer.push(tmp);
+                }
+                else{
+                    sensordata poped = databuffer.pop();
+                    if (poped.sensortype != 1){
+                        //do nothing
+                        databuffer.push(tmp);
+                    }
+                    else{
+                        if(Math.abs(poped.timestamp - tmp.timestamp) < 500000){
+                            writeData(tmp.timestamp+", "+ tmp.data+", "+poped.data);
+                        }
+                        else{
+                            databuffer.push(tmp);
+                        }
+                    }
+                }
             }
         }
 
