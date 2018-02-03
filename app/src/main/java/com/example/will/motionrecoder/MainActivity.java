@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         databuffer.push(tmp);
                     }
                     else{
-                        if(Math.abs(poped.timestamp - tmp.timestamp) < 500000){
+                        if(Math.abs(poped.timestamp - tmp.timestamp) < 1000000){
                             writeData(tmp.timestamp+", "+ poped.data+", "+tmp.data);
                         }
                         else{
@@ -117,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         databuffer.push(tmp);
                     }
                     else{
-                        if(Math.abs(poped.timestamp - tmp.timestamp) < 500000){
+                        if(Math.abs(poped.timestamp - tmp.timestamp) < 1000000){
                             writeData(tmp.timestamp+", "+ tmp.data+", "+poped.data);
                         }
                         else{
